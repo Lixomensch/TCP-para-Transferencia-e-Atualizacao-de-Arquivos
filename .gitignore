@@ -6,9 +6,5 @@
 *.env
 *.db
 
-# Ignore files within directories
-data/*
-!data/.gitkeep
-
 # Ignore specific directories
 **/__pycache__/
