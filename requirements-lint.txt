@@ -1,0 +1,12 @@
+# Code Formatting
+autopep8
+autoflake
+isort
+
+# Linting
+flake8
+flake8-docstrings
+flake8-import-order
+flake8-todo
+flake8-isort
+pylint

@@ -1,0 +1,40 @@
+name: Code Quality
+
+on: [push, pull_request]
+
+jobs:
+  linting-and-formatting:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.10.12"
+
+      - name: Install dependencies
+        run: |
+          pip install isort autoflake autopep8 pylint flake8
+
+      - name: Run isort
+        run: |
+          isort --settings-path=config/make/setup-lint.cfg src
+
+      - name: Run autoflake
+        run: |
+          autoflake --remove-all-unused-imports --in-place --recursive src
+
+      - name: Run autopep8
+        run: |
+          autopep8 --in-place --recursive src
+
+      - name: Run pylint
+        run: |
+          pylint --rcfile=config/make/.pylintrc --recursive=y src
+
+      - name: Run flake8
+        run: |
+          flake8 --config=config/make/setup-lint.cfg src
