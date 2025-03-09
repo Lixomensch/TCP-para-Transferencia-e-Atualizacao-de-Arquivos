@@ -5,15 +5,14 @@ import threading
 
 
 class Server:
-    def __init__(self, host='0.0.0.0', port=5000, files_dir='data'):
+    def __init__(self, host='0.0.0.0', port=9999, files_dir='data'):
         self.host = host
         self.port = port
         self.files_dir = files_dir
         self.setup_server()
 
     def setup_server(self):
-        if not os.path.exists(self.files_dir):
-            os.makedirs(self.files_dir)
+        os.makedirs(self.files_dir, exist_ok=True)
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((self.host, self.port))
         self.server.listen(5)
@@ -22,7 +21,7 @@ class Server:
     def calcular_hash(self, filepath):
         hasher = hashlib.sha256()
         with open(filepath, 'rb') as f:
-            while chunk := f.read(4096):
+            for chunk in iter(lambda: f.read(4096), b""):
                 hasher.update(chunk)
         return hasher.hexdigest()
 
@@ -30,6 +29,7 @@ class Server:
         print(f"Cliente conectado: {addr}")
         try:
             while True:
+                print("Aguardando dados do cliente...")
                 data = conn.recv(1024).decode()
                 if not data:
                     break
@@ -50,21 +50,34 @@ class Server:
         filename = args[0]
         filepath = os.path.join(self.files_dir, filename)
 
-        if os.path.exists(filepath):
-            hash_atual = self.calcular_hash(filepath)
-            conn.send(f"OK {hash_atual}\n".encode())
-            with open(filepath, "rb") as f:
-                conn.sendfile(f)
-        else:
-            conn.send("ERRO Arquivo não encontrado\n".encode())
+        if not os.path.exists(filepath):
+            conn.send(b"ERROR: Arquivo nao encontrado\n")
+            return
+
+        file_size = os.path.getsize(filepath)
+        conn.send(f"{file_size:020d}".encode())
+        with open(filepath, "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                conn.send(chunk)
+
+        print(f"Arquivo {filename} enviado para o cliente {conn.getpeername()}")
 
     def handle_update(self, conn, args):
         filename = args[0]
         filepath = os.path.join(self.files_dir, filename)
+        print(args)
 
         with open(filepath, "wb") as f:
+            print("arquivo aberto")
             while chunk := conn.recv(4096):
+                print(f"Recebendo chunk: {chunk[:50]}...")
+                if not chunk or chunk == b"EOF":
+                    break
                 f.write(chunk)
+                print(f"Recebido chunk: {chunk[:50]}...")
+        
+        print(f"Arquivo {filename} recebido com sucesso.")
+        conn.send(b"OK\n")
 
         novo_hash = self.calcular_hash(filepath)
         print(f"Arquivo {filename} atualizado. Hash: {novo_hash}")
@@ -73,8 +86,7 @@ class Server:
     def start(self):
         while True:
             conn, addr = self.server.accept()
-            threading.Thread(target=self.handle_client,
-                             args=(conn, addr)).start()
+            threading.Thread(target=self.handle_client, args=(conn, addr), daemon=True).start()
 
 
 if __name__ == "__main__":
