@@ -54,11 +54,15 @@ class Client:
             client.connect((self.host, self.port))
 
             client.send(f"UPDATE {filename}\n".encode())
-            time.sleep(1)
+            response = client.recv(1024)
+            if response != b"OK\n":
+                print("Servidor nao aceitou a atualizacao")
+                return
+            
             with open(filepath, "rb") as f:
                 for chunk in iter(lambda: f.read(4096), b""):
                     client.send(chunk)
-                    print(f"Enviando chunk: {chunk[:50]}...")
+                    
             client.send(b"EOF")
 
             response = client.recv(1024).decode().strip()

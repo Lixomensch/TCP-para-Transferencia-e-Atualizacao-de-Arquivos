@@ -29,7 +29,6 @@ class Server:
         print(f"Cliente conectado: {addr}")
         try:
             while True:
-                print("Aguardando dados do cliente...")
                 data = conn.recv(1024).decode()
                 if not data:
                     break
@@ -65,18 +64,15 @@ class Server:
     def handle_update(self, conn, args):
         filename = args[0]
         filepath = os.path.join(self.files_dir, filename)
-        print(args)
-
+        
+        conn.send(b"OK\n")
+        
         with open(filepath, "wb") as f:
-            print("arquivo aberto")
             while chunk := conn.recv(4096):
-                print(f"Recebendo chunk: {chunk[:50]}...")
                 if not chunk or chunk == b"EOF":
                     break
                 f.write(chunk)
-                print(f"Recebido chunk: {chunk[:50]}...")
         
-        print(f"Arquivo {filename} recebido com sucesso.")
         conn.send(b"OK\n")
 
         novo_hash = self.calcular_hash(filepath)
