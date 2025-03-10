@@ -43,6 +43,56 @@ make update
 
 This will run the `client.py` script with the `update` argument to trigger a data update.
 
+### Send a new data file
+
+To send a new data file via the client, run the following command:
+
+```sh
+make new
+```
+
+This will run the `client.py` script with the `new` argument, sending the new data file.
+
+### Send a new PDF file
+
+To send a new PDF file via the client, run the following command:
+
+```sh
+make newpdf
+```
+
+This will run the `client.py` script with the `new rafael.pdf` argument, sending the new PDF file.
+
+### Additional Client Operations
+
+Beyond the standard `make` commands, you can also manually specify a filename for different operations:
+
+- **Request a specific file:**
+
+  ```sh
+  python src/client.py request <filename>
+  ```
+
+  If no filename is provided, the default is `test.txt`.
+
+- **Update a specific file:**
+
+  ```sh
+  python src/client.py update <filename>
+  ```
+
+  If no filename is provided, the default is `test.txt`.
+
+- **Send a new file:**
+
+  ```sh
+  python src/client.py new <filename>
+  ```
+
+  If no filename is provided, the default is `test_new.txt`.
+
+These options provide greater flexibility in specifying which file to process.
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).

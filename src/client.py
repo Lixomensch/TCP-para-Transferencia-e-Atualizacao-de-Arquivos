@@ -3,6 +3,7 @@ import argparse
 import hashlib
 import os
 import socket
+import time
 
 
 class Client:
@@ -93,35 +94,74 @@ class Client:
             with open(filepath, "rb") as file:
                 for chunk in iter(lambda: file.read(4096), b""):
                     client_socket.send(chunk)
-
+                    
             client_socket.send(b"EOF")
-
             response = client_socket.recv(1024).decode().strip()
             print("Server response:", response)
+            
+    def send_new_file(self, filename):
+        """
+        Send a new file to the server to be stored.
+        
+        :param filename: The name of the file to send to the server.
+        """
+        filepath = os.path.join(self.download_dir, filename)
+        if not os.path.exists(filepath):
+            print("Error: File not found.")
+            return
 
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
+            client_socket.connect((self.host, self.port))
+            client_socket.send(f"NEW {os.path.basename(filename)}\n".encode())
+            
+            response = client_socket.recv(1024)
+            if response != b"OK\n":
+                print("Server did not accept the file.")
+                return
+
+            with open(filepath, "rb") as file:
+                for chunk in iter(lambda: file.read(4096), b""):
+                    client_socket.send(chunk)
+            
+            client_socket.send(b"EOF")
+            response = client_socket.recv(1024).decode().strip()
+            print("Server response:", response)
 
 def main():
     """
     Main entry point of the client program.
 
-    This function parses the command line arguments and invokes either the request_file or
-    update_file method of the Client class, depending on the argument provided.
-
-    :return: None
+    Parses command-line arguments and executes the appropriate method of the Client class.
     """
-    parser = argparse.ArgumentParser()
-    parser.add_argument('action', choices=[
-                        'request', 'update'], help="Action to be performed.")
-    args = parser.parse_args()
 
+    parser = argparse.ArgumentParser(description="Client program for file operations.")
+    parser.add_argument(
+        'action', choices=['request', 'update', 'new'], help="Action to be performed."
+    )
+    parser.add_argument(
+        'filename', nargs='?', default=None, help="(Optional) Name of the file to process."
+    )
+
+    args = parser.parse_args()
     client = Client()
 
-    if args.action == "request":
-        client.request_file("test.txt")
-    elif args.action == "update":
-        client.update_file("test.txt")
-    else:
-        print("Invalid option.")
+    default_files = {
+        "request": "test.txt",
+        "update": "test.txt",
+        "new": "test_new.txt"
+    }
+
+    filename = args.filename or default_files[args.action]
+    
+    if args.filename is None:
+        print(f"Warning: No filename provided. Using default file: {filename}")
+
+    action_methods = {
+        "request": client.request_file,
+        "update": client.update_file,
+        "new": client.send_new_file
+    }
+    action_methods[args.action](filename)
 
 
 if __name__ == "__main__":

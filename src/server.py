@@ -49,13 +49,6 @@ class Server:
     def handle_client(self, conn, addr):
         """
         Handle communication with a connected client.
-
-        :param conn: The socket connection to the client.
-        :param addr: The address of the connected client.
-        This method listens for commands from the client and processes them.
-        Supported commands are 'GET' and 'UPDATE', which delegate to the
-        respective handler methods. The connection is closed when the client
-        disconnects or an error occurs.
         """
         print(f"Client connected: {addr}")
         try:
@@ -70,6 +63,8 @@ class Server:
                     self.handle_get(conn, args)
                 elif command == "UPDATE":
                     self.handle_update(conn, args)
+                elif command == "NEW":
+                    self.handle_new(conn, args)
         except Exception as e:
             print(f"Error with client {addr}: {e}")
         finally:
@@ -118,8 +113,10 @@ class Server:
         conn.send(b"OK\n")
 
         with open(filepath, "wb") as file:
-            while chunk := conn.recv(4096):
-                if not chunk or chunk == b"EOF":
+            while True: 
+                chunk = conn.recv(4096)
+                if not chunk or chunk.endswith(b"EOF"):
+                    file.write(chunk[:-3])
                     break
                 file.write(chunk)
 
@@ -128,6 +125,28 @@ class Server:
         new_hash = self.calculate_hash(filepath)
         print(f"File {filename} updated. Hash: {new_hash}")
         conn.send(f"OK {new_hash}\n".encode())
+
+    def handle_new(self, conn, args):
+        """
+        Handle a NEW request from a client.
+        
+        :param conn: The socket connection to the client.
+        :param args: A list containing the filename to be stored.
+        """
+        filename = args[0]
+        filepath = os.path.join(self.files_dir, filename)
+
+        conn.send(b"OK\n")
+        with open(filepath, "wb") as file:
+            while True: 
+                chunk = conn.recv(4096)
+                if not chunk or chunk.endswith(b"EOF"):
+                    file.write(chunk[:-3])
+                    break
+                file.write(chunk)
+
+        conn.send(b"File stored successfully\n")
+        print(f"New file {filename} received and stored.")
 
     def start(self):
         """

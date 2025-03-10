@@ -4,34 +4,40 @@ include .env
 
 #* Python Rules
 server:
-	python src/server.py
+	python $(SRC)/server.py
 
 request:
-	python src/client.py request
+	python $(SRC)/client.py request
 
 update:
-	python src/client.py update
+	python $(SRC)/client.py update
+
+new:
+	python $(SRC)/client.py new
+
+newpdf:
+	python $(SRC)/client.py new rafael.pdf
 
 #* Git Rules
 isort:
 	@echo "Formatando com isort..."
-	isort --settings-path=$(MAKE_CONFIG_FILE) $(FORMAT_CHECK_SRC)
+	isort --settings-path=$(MAKE_CONFIG_FILE) $(SRC)
 
 autoflake:
 	@echo "Removendo imports não utilizados com autoflake..."
-	autoflake --remove-all-unused-imports --in-place --recursive $(FORMAT_CHECK_SRC)
+	autoflake --remove-all-unused-imports --in-place --recursive $(SRC)
 
 autopep8:
 	@echo "Formatando com autopep8..."
-	autopep8 --in-place --recursive $(FORMAT_CHECK_SRC)
+	autopep8 --in-place --recursive $(SRC)
 
 pylint:
 	@echo "Executando pylint..."
-	pylint --rcfile=$(PYLINT_CONFIG_FILE) --recursive=y $(FORMAT_CHECK_SRC)
+	pylint --rcfile=$(PYLINT_CONFIG_FILE) --recursive=y $(SRC)
 
 flake8:
 	@echo "Executando flake8..."
-	flake8 --config=$(MAKE_CONFIG_FILE) $(FORMAT_CHECK_SRC)
+	flake8 --config=$(MAKE_CONFIG_FILE) $(SRC)
 
 format: autoflake autopep8 isort
 
