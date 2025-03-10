@@ -3,7 +3,7 @@ ignore=__init__.py
 
 [MESSAGES CONTROL]
 disable=
-    E0401, W0718, C0114
+    E0401, W0718, C0114, R0801
 
 [REPORTS]
 output-format=colorized
